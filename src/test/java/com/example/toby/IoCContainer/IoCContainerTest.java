@@ -1,16 +1,22 @@
 package com.example.toby.IoCContainer;
 
 import com.example.toby.Hello;
+import com.example.toby.Printer;
 import com.example.toby.StringPrinter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.internal.matchers.NotNull;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.context.support.GenericXmlApplicationContext;
 import org.springframework.context.support.StaticApplicationContext;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 
@@ -73,5 +79,24 @@ public class IoCContainerTest {
         hello.print();
 
         assertThat(ga.getBean("printer").toString()).isEqualTo("Hello Spring");
+    }
+
+    @Test
+    void 컨텍스트_계층구조에_대한_테스트() {
+        ApplicationContext parent = new GenericXmlApplicationContext("classpath:parentContext.xml");
+
+        GenericApplicationContext child = new GenericApplicationContext(parent);
+        XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(child);
+        reader.loadBeanDefinitions("classpath:childContext.xml");
+        child.refresh();
+
+        Printer printer = child.getBean("printer", Printer.class);
+        assertThat(printer).isNotNull();
+
+        Hello hello = child.getBean("hello", Hello.class);
+        assertThat(hello).isNotNull();
+
+        hello.print();
+        assertThat(printer.toString()).isEqualTo("Hello Child");
     }
 }
